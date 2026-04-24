@@ -16,8 +16,10 @@ def wrap_angle(angle: np.ndarray) -> np.ndarray:
 @dataclass
 class PID:
     gains: PIDGains
+    deriv_filter_alpha: float = 0.7
     integral: np.ndarray | None = None
     prev_error: np.ndarray | None = None
+    filtered_derivative: np.ndarray | None = None
     initialized: bool = False
 
     def __post_init__(self) -> None:
@@ -25,10 +27,13 @@ class PID:
             self.integral = np.zeros_like(self.gains.kp, dtype=float)
         if self.prev_error is None:
             self.prev_error = np.zeros_like(self.gains.kp, dtype=float)
+        if self.filtered_derivative is None:
+            self.filtered_derivative = np.zeros_like(self.gains.kp, dtype=float)
 
     def reset(self) -> None:
         self.integral.fill(0.0)
         self.prev_error.fill(0.0)
+        self.filtered_derivative.fill(0.0)
         self.initialized = False
 
     def update(self, error: np.ndarray, dt: float) -> np.ndarray:
@@ -38,15 +43,19 @@ class PID:
             self.gains.integral_limit,
         )
         if not self.initialized or dt <= 0.0:
-            derivative = np.zeros_like(error)
+            self.filtered_derivative = np.zeros_like(error)
             self.initialized = True
         else:
-            derivative = (error - self.prev_error) / dt
+            raw_derivative = (error - self.prev_error) / dt
+            self.filtered_derivative = (
+                self.deriv_filter_alpha * raw_derivative
+                + (1.0 - self.deriv_filter_alpha) * self.filtered_derivative
+            )
         self.prev_error = error.copy()
         return (
             self.gains.kp * error
             + self.gains.ki * self.integral
-            + self.gains.kd * derivative
+            + self.gains.kd * self.filtered_derivative
         )
 
 

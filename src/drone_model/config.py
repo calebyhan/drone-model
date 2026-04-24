@@ -43,7 +43,7 @@ class ControlConfig:
     position_gains: PIDGains = field(
         default_factory=lambda: PIDGains(
             kp=np.array([0.65, 0.65, 0.85], dtype=float),
-            ki=np.array([0.0, 0.0, 0.0], dtype=float),
+            ki=np.array([0.08, 0.08, 0.12], dtype=float),
             kd=np.array([0.0, 0.0, 0.0], dtype=float),
             integral_limit=np.array([1.5, 1.5, 1.0], dtype=float),
         )
@@ -51,8 +51,8 @@ class ControlConfig:
     attitude_gains: PIDGains = field(
         default_factory=lambda: PIDGains(
             kp=np.array([3.2, 3.2, 1.2], dtype=float),
-            ki=np.array([0.0, 0.0, 0.0], dtype=float),
-            kd=np.array([0.0, 0.0, 0.0], dtype=float),
+            ki=np.array([0.15, 0.15, 0.05], dtype=float),
+            kd=np.array([0.05, 0.05, 0.02], dtype=float),
             integral_limit=np.array([0.35, 0.35, 0.25], dtype=float),
         )
     )
