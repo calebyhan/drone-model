@@ -16,7 +16,7 @@ import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.animation import FuncAnimation
-from matplotlib.widgets import Button, Slider
+from matplotlib.widgets import Button
 from mpl_toolkits.mplot3d import Axes3D
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -63,13 +63,13 @@ def _arm_diagonals(pos: np.ndarray, att: np.ndarray, arm: float) -> tuple[np.nda
     rots = np.array([pos + R @ t for t in tips])
     return rots[[0, 2]], rots[[1, 3]], rots   # diag1, diag2, all-4
 
-def _3d_axis_widget(ax, origin: np.ndarray, scale: float) -> None:
-    for vec, col, lbl in zip(
-        [np.array([1, 0, 0]), np.array([0, 1, 0]), np.array([0, 0, 1])],
-        [RED, GREEN, BLUE], ["X", "Y", "Z"],
-    ):
-        ax.quiver(*origin, *(vec * scale), color=col, linewidth=1.3, arrow_length_ratio=0.35, normalize=False)
-        ax.text(*(origin + vec * scale * 1.3), lbl, color=col, fontsize=6.5)
+
+def _random_target() -> np.ndarray:
+    return np.array([
+        np.random.uniform(0.5, 7.0),
+        np.random.uniform(0.5, 7.0),
+        np.random.uniform(0.5, 5.5),
+    ])
 
 
 def _style_ax2d(ax: plt.Axes, title: str = "") -> None:
@@ -97,13 +97,10 @@ def main() -> None:
     arm = config.drone.arm_length
     max_om = config.drone.max_omega
     max_tilt = config.drone.max_tilt_rad
-    init_pos = config.simulation.initial_position.copy()
-    init_tgt = config.simulation.target_position.copy()
-
     # Live simulation state (mutable containers for closure mutation)
     sim_state = [runner.initial_state()]
     t_sim = [0.0]
-    current_target = [init_tgt.copy()]
+    current_target = [_random_target()]
 
     # Rolling history deques – auto-drop oldest when full
     hist_t = deque(maxlen=MAX_HIST)
@@ -134,9 +131,9 @@ def main() -> None:
         ctrl.rate_pid.reset()
         env.reset()
         t_sim[0] = 0.0
+        current_target[0] = _random_target()
         hist_t.clear();   hist_pos.clear(); hist_att.clear()
         hist_om.clear();  hist_w.clear();   hist_sat.clear()
-        # Prime with one step so artists never read from empty deques
         step_sim(1)
 
     # Prime history before building artists
@@ -161,7 +158,7 @@ def main() -> None:
     ax_hdr.set_facecolor(BG); ax_hdr.axis("off")
 
     gs_mid = gridspec.GridSpecFromSubplotSpec(
-        1, 2, subplot_spec=gs[1], width_ratios=[63, 37], wspace=0.05,
+        1, 2, subplot_spec=gs[1], width_ratios=[75, 25], wspace=0.05,
     )
     ax3d = fig.add_subplot(gs_mid[0], projection="3d")
     ax_pid = fig.add_subplot(gs_mid[1])
@@ -173,36 +170,12 @@ def main() -> None:
     ax_ctl = fig.add_subplot(gs_bot[1])
     ax_wnd = fig.add_subplot(gs_bot[2])
 
-    # Slider / button widget axes 
-    ax_ctrl_lbl = fig.add_axes([0.03, 0.098, 0.50, 0.018])
-    ax_ctrl_lbl.set_facecolor(BG); ax_ctrl_lbl.axis("off")
-    ax_ctrl_lbl.text(0, 0.5, "— SET TARGET —", transform=ax_ctrl_lbl.transAxes, color="#666666", fontsize=7, va="center")
-
-    ax_sl_x = fig.add_axes([0.07, 0.052, 0.23, 0.026])
-    ax_sl_y = fig.add_axes([0.36, 0.052, 0.23, 0.026])
-    ax_sl_z = fig.add_axes([0.65, 0.052, 0.17, 0.026])
-    ax_btn  = fig.add_axes([0.86, 0.038, 0.10, 0.045])
-
-    sl_x = Slider(ax_sl_x, "X", -2.0, 8.0, valinit=init_tgt[0], color=BLUE)
-    sl_y = Slider(ax_sl_y, "Y", -2.0, 8.0, valinit=init_tgt[1], color=GREEN)
-    sl_z = Slider(ax_sl_z, "Z", 0.0, 6.0, valinit=init_tgt[2], color=ACCENT)
+    # Button widget
+    ax_btn = fig.add_axes([0.44, 0.038, 0.12, 0.045])
     btn_reset = Button(ax_btn, "RESET", color=GRID, hovercolor="#3a3a3a")
-
-    for sl in (sl_x, sl_y, sl_z):
-        sl.label.set_color(TXT)
-        sl.valtext.set_color(TXT)
-        sl.ax.set_facecolor(PANEL)
-
     btn_reset.label.set_color(RED)
     btn_reset.label.set_fontweight("bold")
     btn_reset.label.set_fontsize(9)
-
-    def on_slider(_val: float) -> None:
-        current_target[0] = np.array([sl_x.val, sl_y.val, sl_z.val])
-
-    sl_x.on_changed(on_slider)
-    sl_y.on_changed(on_slider)
-    sl_z.on_changed(on_slider)
     btn_reset.on_clicked(do_reset)
 
     # 3-D environment
@@ -222,16 +195,8 @@ def main() -> None:
     ax3d.set_ylim(-2.5, 8.5)
     ax3d.set_zlim(0.0,  6.5)
 
-    # XYZ widget (static)
-    _3d_axis_widget(ax3d, np.array([-2.0, -2.0, 0.2]), 0.9)
-
-    # Start dot (static)
-    ax3d.scatter(*init_pos, color=BLUE, s=25, zorder=5)
-
     # Legend proxy lines
-    ax3d.plot([], [], [], ls="--", color=BLUE,     lw=1.5,  label="flight path")
-    ax3d.scatter([], [], [], c=ACCENT,    s=50, label="front rotors")
-    ax3d.scatter([], [], [], c="#555555", s=50, label="rear rotors")
+    ax3d.plot([], [], [], ls="--", color=BLUE, lw=1.5, label="flight path")
     ax3d.legend(
         loc="upper left", fontsize=6,
         facecolor=PANEL, edgecolor=GRID, labelcolor=TXT,
@@ -245,15 +210,21 @@ def main() -> None:
     target_lbl = ax3d.text(0, 0, 0, "", color=RED, fontsize=6.5)
 
     # Dynamic drone artists
-    trail,   = ax3d.plot([], [], [], ls="--", color=BLUE,     lw=1.5, alpha=0.75)
-    arm1_ln, = ax3d.plot([], [], [], color=TXT,      lw=2.8)
-    arm2_ln, = ax3d.plot([], [], [], color=TXT,      lw=2.8)
-    front_r  = ax3d.scatter([], [], [], c=ACCENT,    s=110, zorder=6, depthshade=False)
-    rear_r   = ax3d.scatter([], [], [], c="#555555",  s=110, zorder=6, depthshade=False)
-    body_c   = ax3d.scatter([], [], [], c="white",    s=60,  zorder=7, depthshade=False)
+    trail,   = ax3d.plot([], [], [], ls="--", color=BLUE, lw=1.5, alpha=0.75)
+    arm1_ln, = ax3d.plot([], [], [], color=TXT, lw=2.8)
+    arm2_ln, = ax3d.plot([], [], [], color=TXT, lw=2.8)
+    body_c   = ax3d.scatter([], [], [], c="white", s=60, zorder=7, depthshade=False)
     alt_vl,  = ax3d.plot([], [], [], ls=":", color=TXT, lw=0.8, alpha=0.4)
     alt_txt  = ax3d.text(0, 0, 0, "", fontsize=6.5, ha="center")
-    wind_q   = [None]   # removable quiver
+
+    # Fixed-corner wind indicator
+    _WIND_ORIGIN = np.array([-2.0, 7.5, 5.5])
+    _WIND_SCALE  = 1.2   # max arrow length in metres
+    ax3d.text(*(_WIND_ORIGIN + np.array([0, 0, 0.55])), "WIND", color=RED,
+              fontsize=6.5, ha="center", fontweight="bold")
+    wind_q    = [None]
+    wind_spd  = ax3d.text(*(_WIND_ORIGIN + np.array([0, 0, -0.45])), "",
+                          color=RED, fontsize=6.5, ha="center")
 
     # PID state panel 
     ax_pid.set_facecolor(PANEL)
@@ -319,17 +290,6 @@ def main() -> None:
         transform=ax_hdr.transAxes, fontsize=9,
         va="center", fontfamily="monospace",
     )
-    ax_hdr.text(
-        0.785, 0.45, " FLYING ",
-        transform=ax_hdr.transAxes, color=BG,
-        fontsize=8.5, va="center", fontweight="bold",
-        bbox=dict(facecolor=GREEN, edgecolor="none", boxstyle="round,pad=0.25"),
-    )
-    ax_hdr.text(
-        0.875, 0.45, " PID: CASCADE ",
-        transform=ax_hdr.transAxes, fontsize=8.5, va="center",
-        bbox=dict(facecolor=PANEL, edgecolor=GREEN, boxstyle="round,pad=0.25", linewidth=1.2),
-    )
 
     # Animation update 
     stride = max(args.stride, 1)
@@ -345,6 +305,11 @@ def main() -> None:
         t_now = hist_t[-1]
         ct    = current_target[0]
 
+        # arrival check – spawn new random target when drone gets close
+        if np.linalg.norm(p - ct) < 0.4:
+            current_target[0] = _random_target()
+            ct = current_target[0]
+
         # header
         wm = float(np.linalg.norm(w))
         hdr_txt.set_text(
@@ -357,11 +322,9 @@ def main() -> None:
         trail.set_3d_properties(trail_arr[:, 2])
 
         # drone geometry
-        d1, d2, rots = _arm_diagonals(p, at, arm)
+        d1, d2, _ = _arm_diagonals(p, at, arm)
         arm1_ln.set_data(d1[:, 0], d1[:, 1]); arm1_ln.set_3d_properties(d1[:, 2])
         arm2_ln.set_data(d2[:, 0], d2[:, 1]); arm2_ln.set_3d_properties(d2[:, 2])
-        front_r._offsets3d = (rots[:2, 0], rots[:2, 1], rots[:2, 2])
-        rear_r._offsets3d  = (rots[2:, 0], rots[2:, 1], rots[2:, 2])
         body_c._offsets3d  = ([p[0]], [p[1]], [p[2]])
 
         # altitude indicator
@@ -379,17 +342,18 @@ def main() -> None:
         target_lbl.set_position_3d((ct[0] + 0.15, ct[1] + 0.15, ct[2]))
         target_lbl.set_text("TARGET")
 
-        # wind quiver (remove → redraw)
+        # corner wind indicator (remove → redraw each frame)
         if wind_q[0] is not None:
             wind_q[0].remove()
             wind_q[0] = None
-        if wm > 0.15:
-            sc_w = min(0.6 / wm, 1.2)
+        if wm > 0.05:
+            sc_w = _WIND_SCALE / max(wm, 1.0)   # normalise so max length = _WIND_SCALE
             wind_q[0] = ax3d.quiver(
-                p[0], p[1], p[2],
+                *_WIND_ORIGIN,
                 w[0] * sc_w, w[1] * sc_w, w[2] * sc_w,
-                color=RED, lw=1.5, arrow_length_ratio=0.3, normalize=False,
+                color=RED, lw=2.0, arrow_length_ratio=0.3, normalize=False,
             )
+        wind_spd.set_text(f"{wm:.1f} m/s")
 
         # PID attitude bars
         at_deg = np.rad2deg(at)
