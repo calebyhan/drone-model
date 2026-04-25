@@ -18,8 +18,8 @@ python scripts/view_sim_ui.py
 
 
 The UI includes:
-- **3D environment** — live drone position, flight trail, rotor geometry, and wind quiver
-- **PID state panel** — roll/pitch/yaw attitude bars and per-motor ω readouts with saturation warnings
-- **Telemetry plots** — scrolling position error, motor speeds, and Dryden wind components
-- **Target XYZ sliders** — move the setpoint in real-time while the drone is flying
-- **RESET button** — restart the drone from its initial conditions
+- **3D environment** - live drone position, flight trail, rotor geometry, and wind quiver
+- **PID state panel** - roll/pitch/yaw attitude bars and per-motor ω readouts with saturation warnings
+- **Telemetry plots** - scrolling position error, motor speeds, and Dryden wind components
+- **Target XYZ sliders** - move the setpoint in real-time while the drone is flying
+- **RESET button** - restart the drone from its initial conditions

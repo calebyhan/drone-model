@@ -139,39 +139,47 @@ def main() -> None:
     # Prime history before building artists
     step_sim(1)
 
-    # Figure / GridSpec 
-    fig = plt.figure(figsize=(13.5, 8.6))
+    # Figure / GridSpec
+    fig = plt.figure(figsize=(15, 9.5))
     fig.patch.set_facecolor(BG)
     fig.suptitle("DATA 442 — DRONE SIMULATION UI", color=TXT, fontsize=10, fontweight="bold",
         x=0.02, ha="left", y=0.987,
     )
 
-    # Leave bottom=0.14 so slider axes sit comfortably below
+    # 3 columns: [left sidebar | 3D | right sidebar], header row above
     gs = gridspec.GridSpec(
-        3, 1, figure=fig,
-        height_ratios=[1, 15, 10],
-        hspace=0.13,
-        left=0.03, right=0.97, top=0.958, bottom=0.14,
+        2, 1, figure=fig,
+        height_ratios=[1, 30],
+        hspace=0.08,
+        left=0.03, right=0.97, top=0.958, bottom=0.07,
     )
 
     ax_hdr = fig.add_subplot(gs[0])
     ax_hdr.set_facecolor(BG); ax_hdr.axis("off")
 
-    gs_mid = gridspec.GridSpecFromSubplotSpec(
-        1, 2, subplot_spec=gs[1], width_ratios=[75, 25], wspace=0.05,
+    gs_main = gridspec.GridSpecFromSubplotSpec(
+        1, 3, subplot_spec=gs[1], width_ratios=[20, 60, 20], wspace=0.07,
     )
-    ax3d = fig.add_subplot(gs_mid[0], projection="3d")
-    ax_pid = fig.add_subplot(gs_mid[1])
 
-    gs_bot = gridspec.GridSpecFromSubplotSpec(
-        1, 3, subplot_spec=gs[2], wspace=0.40,
+    # Left sidebar: PID state (top) + position error (bottom)
+    gs_left = gridspec.GridSpecFromSubplotSpec(
+        2, 1, subplot_spec=gs_main[0], height_ratios=[60, 40], hspace=0.38,
     )
-    ax_err = fig.add_subplot(gs_bot[0])
-    ax_ctl = fig.add_subplot(gs_bot[1])
-    ax_wnd = fig.add_subplot(gs_bot[2])
+    ax_pid = fig.add_subplot(gs_left[0])
+    ax_err = fig.add_subplot(gs_left[1])
+
+    # Centre: 3D environment
+    ax3d = fig.add_subplot(gs_main[1], projection="3d")
+
+    # Right sidebar: control effort (top) + dryden wind (bottom)
+    gs_right = gridspec.GridSpecFromSubplotSpec(
+        2, 1, subplot_spec=gs_main[2], height_ratios=[1, 1], hspace=0.38,
+    )
+    ax_ctl = fig.add_subplot(gs_right[0])
+    ax_wnd = fig.add_subplot(gs_right[1])
 
     # Button widget
-    ax_btn = fig.add_axes([0.44, 0.038, 0.12, 0.045])
+    ax_btn = fig.add_axes([0.44, 0.012, 0.12, 0.038])
     btn_reset = Button(ax_btn, "RESET", color=GRID, hovercolor="#3a3a3a")
     btn_reset.label.set_color(RED)
     btn_reset.label.set_fontweight("bold")
@@ -229,38 +237,38 @@ def main() -> None:
     # PID state panel 
     ax_pid.set_facecolor(PANEL)
     ax_pid.set_xlim(-1.05, 1.05)
-    ax_pid.set_ylim(-0.8, 12.0)
+    ax_pid.set_ylim(-0.5, 14.0)
     ax_pid.axis("off")
-    ax_pid.text(-1.02, 11.65, "PID STATE", fontsize=8.5, fontweight="bold", va="top")
+    ax_pid.text(-1.02, 13.75, "PID STATE", fontsize=8.5, fontweight="bold", va="top")
 
     att_cfg = [
-        ("roll φ",  RED,    9.0, max_tilt),
-        ("pitch θ", GREEN,  6.5, max_tilt),
-        ("yaw ψ",   ACCENT, 4.0, np.pi),
+        ("roll φ",  RED,    11.2, max_tilt),
+        ("pitch θ", GREEN,   8.2, max_tilt),
+        ("yaw ψ",   ACCENT,  5.2, np.pi),
     ]
     att_txts = []
     att_bars = []
     for lbl, col, y, _ in att_cfg:
-        ax_pid.text(-1.0, y + 0.72, lbl, color="#888888", fontsize=7)
-        vt = ax_pid.text(-1.0, y - 0.05, "+0.0°", fontsize=10.5, fontweight="bold", va="top")
+        ax_pid.text(-1.0, y + 0.80, lbl, color="#888888", fontsize=7)
+        vt = ax_pid.text(-1.0, y - 0.05, "+0.0°", fontsize=11, fontweight="bold", va="top")
         att_txts.append(vt)
         ax_pid.plot([-0.95, 0.95], [y, y], color=GRID, lw=7, solid_capstyle="butt")
         bl, = ax_pid.plot([0.0, 0.0], [y, y], color=col, lw=7, solid_capstyle="butt")
         att_bars.append((bl, col))
 
-    ax_pid.text(-1.0, 3.0, "motor ω (rad/s)", color="#888888", fontsize=7)
+    ax_pid.text(-1.0, 3.8, "motor ω (rad/s)", color="#888888", fontsize=7)
     om_txts = []
     for x, y, lbl in [
-        (-1.0, 1.75, "ω1"), (0.02, 1.75, "ω2"),
-        (-1.0, 0.25, "ω3"), (0.02, 0.25, "ω4"),
+        (-1.0, 2.2, "ω1"), (0.02, 2.2, "ω2"),
+        (-1.0, 0.5, "ω3"), (0.02, 0.5, "ω4"),
     ]:
-        ax_pid.text(x + 0.04, y + 0.52, lbl, color="#777777", fontsize=6.5)
+        ax_pid.text(x + 0.04, y + 0.58, lbl, color="#777777", fontsize=6.5)
         t = ax_pid.text(
-            x + 0.04, y, "0", fontsize=10.5, fontweight="bold",
+            x + 0.04, y, "0", fontsize=11, fontweight="bold",
             bbox=dict(facecolor=GRID, edgecolor=GRID, boxstyle="round,pad=0.22"),
         )
         om_txts.append(t)
-    sat_txt = ax_pid.text(-1.0, -0.58, "", color=RED, fontsize=7)
+    sat_txt = ax_pid.text(-1.0, -0.42, "", color=RED, fontsize=7)
 
     # Telemetry axes 
     for ax, ttl in [
@@ -342,7 +350,7 @@ def main() -> None:
         target_lbl.set_position_3d((ct[0] + 0.15, ct[1] + 0.15, ct[2]))
         target_lbl.set_text("TARGET")
 
-        # corner wind indicator (remove → redraw each frame)
+        # corner wind indicator (remove -> redraw each frame)
         if wind_q[0] is not None:
             wind_q[0].remove()
             wind_q[0] = None
@@ -416,7 +424,7 @@ def main() -> None:
         print(f"Saved to {args.save_frame}")
         return
 
-    # frames=None → itertools.count() → runs indefinitely
+    # frames=None -> itertools.count() -> runs indefinitely
     anim = FuncAnimation(
         fig, update,
         interval=interval_ms,
