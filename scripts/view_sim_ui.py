@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""DATA 442 — Drone Simulation UI  (interactive live simulation)
+"""DATA 442 - Drone Simulation UI  (interactive live simulation)
 
 Controls
 - Target XYZ sliders: move the setpoint in real-time
@@ -83,7 +83,7 @@ def _style_ax2d(ax: plt.Axes, title: str = "") -> None:
 
 # Entry point 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="DATA 442 – Drone Simulation UI")
+    parser = argparse.ArgumentParser(description="DATA 442 - Drone Simulation UI")
     parser.add_argument("--stride", type=int, default=5, help="Simulation steps per animation frame (default 5).")
     parser.add_argument("--save-frame", type=Path, default=None, help="Save first frame to file instead of opening window.")
     args = parser.parse_args()
@@ -102,7 +102,7 @@ def main() -> None:
     t_sim = [0.0]
     current_target = [_random_target()]
 
-    # Rolling history deques – auto-drop oldest when full
+    # Rolling history deques - auto-drop oldest when full
     hist_t = deque(maxlen=MAX_HIST)
     hist_pos = deque(maxlen=MAX_HIST)
     hist_att = deque(maxlen=MAX_HIST)
@@ -142,7 +142,7 @@ def main() -> None:
     # Figure / GridSpec
     fig = plt.figure(figsize=(15, 9.5))
     fig.patch.set_facecolor(BG)
-    fig.suptitle("DATA 442 — DRONE SIMULATION UI", color=TXT, fontsize=10, fontweight="bold",
+    fig.suptitle("DATA 442 - DRONE SIMULATION UI", color=TXT, fontsize=10, fontweight="bold",
         x=0.02, ha="left", y=0.987,
     )
 
@@ -313,7 +313,7 @@ def main() -> None:
         t_now = hist_t[-1]
         ct    = current_target[0]
 
-        # arrival check – spawn new random target when drone gets close
+        # arrival check - spawn new random target when drone gets close
         if np.linalg.norm(p - ct) < 0.4:
             current_target[0] = _random_target()
             ct = current_target[0]
