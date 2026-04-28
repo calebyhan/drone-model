@@ -432,8 +432,7 @@ def main() -> None:
 
     if args.record:
         record_fps = args.record_fps
-        sim_seconds_per_frame = dt * stride
-        total_frames = int(args.record_duration / sim_seconds_per_frame)
+        total_frames = int(args.record_duration * record_fps)
         anim = FuncAnimation(
             fig, update,
             frames=total_frames,
