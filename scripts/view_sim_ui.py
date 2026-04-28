@@ -12,10 +12,13 @@ import sys
 from collections import deque
 from pathlib import Path
 
+import matplotlib
+if "--record" in sys.argv:
+    matplotlib.use("Agg")
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.animation import FuncAnimation
+from matplotlib.animation import FFMpegWriter, FuncAnimation
 from matplotlib.widgets import Button
 from mpl_toolkits.mplot3d import Axes3D
 
@@ -86,6 +89,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="DATA 442 - Drone Simulation UI")
     parser.add_argument("--stride", type=int, default=5, help="Simulation steps per animation frame (default 5).")
     parser.add_argument("--save-frame", type=Path, default=None, help="Save first frame to file instead of opening window.")
+    parser.add_argument("--record", type=Path, default=None, metavar="OUTPUT.mp4", help="Export a 30-second video instead of opening the window.")
+    parser.add_argument("--record-duration", type=float, default=30.0, help="Duration in seconds for --record (default 30).")
+    parser.add_argument("--record-fps", type=int, default=30, help="FPS for --record output (default 30).")
     args = parser.parse_args()
 
     config = build_default_config()
@@ -424,14 +430,32 @@ def main() -> None:
         print(f"Saved to {args.save_frame}")
         return
 
-    # frames=None -> itertools.count() -> runs indefinitely
-    anim = FuncAnimation(
-        fig, update,
-        interval=interval_ms,
-        blit=False,
-        cache_frame_data=False,
-    )
-    plt.show()
+    if args.record:
+        record_fps = args.record_fps
+        sim_seconds_per_frame = dt * stride
+        total_frames = int(args.record_duration / sim_seconds_per_frame)
+        anim = FuncAnimation(
+            fig, update,
+            frames=total_frames,
+            interval=interval_ms,
+            blit=False,
+            repeat=False,
+            cache_frame_data=False,
+        )
+        writer = FFMpegWriter(fps=record_fps, bitrate=4000,
+                              extra_args=["-vf", "crop=trunc(iw/2)*2:trunc(ih/2)*2"])
+        print(f"Recording {args.record_duration:.0f}s → {args.record} ({total_frames} frames @ {record_fps}fps)")
+        anim.save(str(args.record), writer=writer, dpi=150)
+        print("Done.")
+    else:
+        # frames=None -> itertools.count() -> runs indefinitely
+        anim = FuncAnimation(
+            fig, update,
+            interval=interval_ms,
+            blit=False,
+            cache_frame_data=False,
+        )
+        plt.show()
     del anim
 
 
