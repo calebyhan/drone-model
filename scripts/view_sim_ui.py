@@ -90,7 +90,7 @@ def main() -> None:
     parser.add_argument("--stride", type=int, default=5, help="Simulation steps per animation frame (default 5).")
     parser.add_argument("--save-frame", type=Path, default=None, help="Save first frame to file instead of opening window.")
     parser.add_argument("--record", type=Path, default=None, metavar="OUTPUT.mp4", help="Export a 30-second video instead of opening the window.")
-    parser.add_argument("--record-duration", type=float, default=30.0, help="Duration in seconds for --record (default 30).")
+    parser.add_argument("--record-duration", type=float, default=60.0, help="Duration in seconds for --record (default 30).")
     parser.add_argument("--record-fps", type=int, default=30, help="FPS for --record output (default 30).")
     args = parser.parse_args()
 
@@ -119,7 +119,7 @@ def main() -> None:
     def step_sim(n: int) -> None:
         for _ in range(n):
             w = env.update(dt)
-            cmd = ctrl.compute_command(sim_state[0], current_target[0], dt)
+            cmd = ctrl.compute_command(sim_state[0], current_target[0], dt, wind_velocity=w)
             act = dynamics.mix(cmd)
             hist_t.append(t_sim[0])
             hist_pos.append(sim_state[0].position.copy())

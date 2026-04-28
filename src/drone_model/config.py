@@ -42,10 +42,10 @@ class PIDGains:
 class ControlConfig:
     position_gains: PIDGains = field(
         default_factory=lambda: PIDGains(
-            kp=np.array([0.65, 0.65, 0.85], dtype=float),
-            ki=np.array([0.08, 0.08, 0.12], dtype=float),
-            kd=np.array([0.0, 0.0, 0.0], dtype=float),
-            integral_limit=np.array([2.0, 2.0, 1.5], dtype=float),
+            kp=np.array([0.9, 0.9, 1.1], dtype=float),
+            ki=np.array([0.15, 0.15, 0.18], dtype=float),
+            kd=np.array([0.15, 0.15, 0.1], dtype=float),
+            integral_limit=np.array([3.0, 3.0, 2.5], dtype=float),
         )
     )
     attitude_gains: PIDGains = field(
@@ -68,7 +68,7 @@ class ControlConfig:
         default_factory=lambda: np.array([4.0, 4.0, 2.5], dtype=float)
     )
     max_acceleration: np.ndarray = field(
-        default_factory=lambda: np.array([2.2, 2.2, 2.2], dtype=float)
+        default_factory=lambda: np.array([3.5, 3.5, 3.0], dtype=float)
     )
     position_damping: np.ndarray = field(
         default_factory=lambda: np.array([2.3, 2.3, 3.5], dtype=float)

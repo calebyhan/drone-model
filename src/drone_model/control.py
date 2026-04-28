@@ -84,12 +84,18 @@ class CascadedController:
         state: DroneState,
         target_position: np.ndarray,
         dt: float,
+        wind_velocity: np.ndarray | None = None,
     ) -> ControlCommand:
         position_error = target_position - state.position
         desired_acceleration = (
             self.position_pid.update(position_error, dt)
             - self.control_config.position_damping * state.velocity
         )
+        if wind_velocity is not None:
+            # counteract aerodynamic drag from wind: F_drag = linear_drag * wind (wind direction)
+            # need equal-and-opposite thrust component → subtract from desired accel
+            wind_ff = self.drone_config.linear_drag * wind_velocity / self.drone_config.mass
+            desired_acceleration = desired_acceleration - wind_ff
         desired_acceleration = np.clip(
             desired_acceleration,
             -self.control_config.max_acceleration,

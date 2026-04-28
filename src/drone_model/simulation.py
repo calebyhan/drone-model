@@ -92,7 +92,7 @@ class SimulationRunner:
 
         for i, current_time in enumerate(time):
             current_wind = self.environment.update(dt) if i > 0 else np.zeros(3, dtype=float)
-            command = self.controller.compute_command(state, target_position, dt)
+            command = self.controller.compute_command(state, target_position, dt, wind_velocity=current_wind)
             actuation = self.dynamics.mix(command)
 
             position[i] = state.position
