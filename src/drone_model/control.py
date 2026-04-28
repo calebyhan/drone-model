@@ -16,7 +16,7 @@ def wrap_angle(angle: np.ndarray) -> np.ndarray:
 @dataclass
 class PID:
     gains: PIDGains
-    deriv_filter_alpha: float = 0.7
+    deriv_filter_alpha: float = 0.3
     integral: np.ndarray | None = None
     prev_error: np.ndarray | None = None
     filtered_derivative: np.ndarray | None = None

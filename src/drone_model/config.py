@@ -45,7 +45,7 @@ class ControlConfig:
             kp=np.array([0.65, 0.65, 0.85], dtype=float),
             ki=np.array([0.08, 0.08, 0.12], dtype=float),
             kd=np.array([0.0, 0.0, 0.0], dtype=float),
-            integral_limit=np.array([1.5, 1.5, 1.0], dtype=float),
+            integral_limit=np.array([2.0, 2.0, 1.5], dtype=float),
         )
     )
     attitude_gains: PIDGains = field(
@@ -59,8 +59,8 @@ class ControlConfig:
     rate_gains: PIDGains = field(
         default_factory=lambda: PIDGains(
             kp=np.array([0.012, 0.012, 0.01], dtype=float),
-            ki=np.array([0.0, 0.0, 0.0], dtype=float),
-            kd=np.array([0.0, 0.0, 0.0], dtype=float),
+            ki=np.array([0.004, 0.004, 0.002], dtype=float),
+            kd=np.array([0.0008, 0.0008, 0.0004], dtype=float),
             integral_limit=np.array([0.4, 0.4, 0.3], dtype=float),
         )
     )
