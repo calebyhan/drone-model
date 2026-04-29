@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""DATA 442 - Drone Simulation UI  (interactive live simulation)
 
-Controls
-- Target XYZ sliders: move the setpoint in real-time
-- RESET button: restart drone from initial conditions
-"""
 from __future__ import annotations
 
 import argparse
